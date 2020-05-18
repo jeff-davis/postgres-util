@@ -3,11 +3,16 @@ use std::collections::HashMap;
 use regex::Regex;
 
 // extract numerical major and minor version from version string
-fn parse_version(s: &str) -> (u32, u32) {
-    let re = Regex::new(r"^PostgreSQL (\d+)\.(\d+).*$").unwrap();
-    let caps = re.captures(s).unwrap();
-
-    (caps[1].parse::<u32>().unwrap(), caps[2].parse::<u32>().unwrap())
+fn parse_version(s: &str) -> (String, String) {
+    let re_release = Regex::new(r"^PostgreSQL (\d+)\.(\d+).*$").unwrap();
+    let re_devel = Regex::new(r"^PostgreSQL (\d+)devel.*$").unwrap();
+    if let Some(caps) = re_release.captures(s) {
+        return (caps[1].to_string(), caps[2].to_string())
+    }
+    if let Some(caps) = re_devel.captures(s) {
+        return (caps[1].to_string(), String::from("devel"))
+    }
+    panic!("unable to parse version string");
 }
 
 // extract key and value from the form "KEY = VALUE"
@@ -42,8 +47,8 @@ pub fn postgres() -> HashMap<String, String> {
     let mut map = parse_output(&stdout);
 
     let (major, minor) = parse_version(&map["VERSION"]);
-    map.insert("VERSION_MAJOR".to_string(), major.to_string());
-    map.insert("VERSION_MINOR".to_string(), minor.to_string());
+    map.insert("VERSION_MAJOR".to_string(), major);
+    map.insert("VERSION_MINOR".to_string(), minor);
     map
 }
 
